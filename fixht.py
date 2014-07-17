@@ -8,12 +8,13 @@ import struct
 class FixHTEncoder(object):
     """固定头尾编码器"""
     
-    def __init__(self, header="", tail=""):
+    def __init__(self, header="", tail="", dumps=None):
         self.header = header
         self.tail = tail
+        self.dumps = dumps or (lambda data: data)
     
     def encode(self, msg):
-        return self.header + msg + self.tail
+        return self.header + self.dumps(msg) + self.tail
     
 
 class FixHTDecoder(object):
@@ -21,9 +22,10 @@ class FixHTDecoder(object):
     
     _buf = ""
     
-    def __init__(self, header="", tail=""):
+    def __init__(self, header="", tail="", loads=None):
         self.header = header
         self.tail = tail
+        self.loads = loads or (lambda data: data)
         
     def decode(self, data):
         buf = self._buf = self._buf + data
@@ -45,7 +47,7 @@ class FixHTDecoder(object):
             if pos_tail == -1:
                 yield ("oops", "not find tail yet")
                 break
-            msg = buf[:pos_tail]
+            msg = self.loads(buf[:pos_tail])
             buf = buf[pos_tail+len(self.tail):]
             self._buf = buf
             yield ("msg", msg)
